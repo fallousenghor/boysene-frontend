@@ -55,7 +55,7 @@ export default function App() {
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/purchases" element={<Purchases />} />
           <Route path="/sales" element={<Sales />} />
-          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout" element={<Checkout onClose={() => {}} />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/whatsapp" element={<WhatsApp />} />
