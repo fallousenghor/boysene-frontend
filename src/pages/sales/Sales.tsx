@@ -10,8 +10,8 @@ import { useNavigate } from 'react-router-dom'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Pagination } from '@/components/ui/Table'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/DropdownMenu'
 import { toast } from '@/store/ui.store'
-import SaleForm from './SaleForm'
 import SaleDetail from './SaleDetail'
+import NouvelleVente from './NouvelleVente.jsx'
 
 // Configuration pour les nouveaux statuts
 const STATUS_CONFIG: Record<string, { label: string; class: string; color: string }> = {
@@ -130,6 +130,7 @@ limit: 10,
           <Button onClick={() => setShowForm(true)}>
             <Plus className="h-4 w-4" /> Nouvelle vente
           </Button>
+
         </div>
       </div>
 
@@ -324,8 +325,13 @@ limit: 10,
         )}
       </Card>
 
-      {showForm && <SaleForm onClose={() => setShowForm(false)} />}
+      {showForm && <NouvelleVente onClose={() => setShowForm(false)} />}
+
+
+
       {viewId && <SaleDetail saleId={viewId} onClose={() => setViewId(null)} />}
+
     </div>
+
   )
 }
