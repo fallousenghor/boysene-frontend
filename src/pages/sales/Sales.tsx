@@ -38,7 +38,7 @@ export default function Sales() {
       const res = await api.get('/sales', {
         params: {
           page,
-          limit: 15,
+limit: 10,
           search: search || undefined,
           status: filterStatus || undefined,
         },

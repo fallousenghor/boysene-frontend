@@ -20,18 +20,26 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState('sales')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [page, setPage] = useState(1)
 
-  const params = { startDate: startDate || undefined, endDate: endDate || undefined }
+  const params = {
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    page,
+    limit: 10,
+  }
+
 
   const { data, isLoading } = useQuery({
-    queryKey: ['report', activeTab, startDate, endDate],
+    queryKey: ['report', activeTab, startDate, endDate, page],
     queryFn: async () => {
       const r = await api.get(`/reports/${activeTab}`, { params })
+      // Certains endpoints renvoient {data, summary, meta}.
       const payload = extractData<any>(r)
-      const summary = extractSummary(r)
-      return Array.isArray(payload) ? { data: payload, summary } : payload
+      return payload
     },
   })
+
 
   const exportExcel = async () => {
     try {
@@ -43,8 +51,11 @@ export default function Reports() {
   }
 
   const summary = data?.summary || {}
+  const rows = data?.data || []
+  const meta = data?.meta || { total: rows.length, pages: 1, limit: 10 }
 
   return (
+
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div><h2 className="text-lg font-semibold">Rapports</h2><p className="text-xs text-muted-foreground">Analyses et statistiques détaillées</p></div>

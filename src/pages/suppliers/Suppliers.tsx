@@ -9,15 +9,22 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Paginati
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/DropdownMenu'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog'
 import { toast } from '@/store/ui.store'
+import { useForm as useForm2 } from 'react-hook-form'
 
 function SupplierForm({ editing, onClose }: { editing?: any; onClose: () => void }) {
   const qc = useQueryClient()
   const { register, handleSubmit, formState: { isSubmitting } } = useForm({ defaultValues: editing || {} })
+
   const mutation = useMutation({
     mutationFn: (d: any) => editing ? api.patch(`/suppliers/${editing.id}`, d) : api.post('/suppliers', d),
-    onSuccess: () => { toast.success(editing ? 'Fournisseur modifié' : 'Fournisseur créé'); qc.invalidateQueries({ queryKey: ['suppliers'] }); onClose() },
+    onSuccess: () => {
+      toast.success(editing ? 'Fournisseur modifié' : 'Fournisseur créé')
+      qc.invalidateQueries({ queryKey: ['suppliers'] })
+      onClose()
+    },
     onError: (e: any) => toast.error(e?.response?.data?.message || 'Erreur'),
   })
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
@@ -43,42 +50,78 @@ function SupplierForm({ editing, onClose }: { editing?: any; onClose: () => void
 }
 
 export default function Suppliers() {
-  const [page, setPage] = useState(1); const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(false); const [editing, setEditing] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<any>(null)
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['suppliers', page, search],
-    queryFn: async () => { const r = await api.get('/suppliers', { params: { page, limit: 15, search: search || undefined } }); return r.data },
+    queryFn: async () => {
+      const r = await api.get('/suppliers', { params: { page, limit: 10, search: search || undefined } })
+      return r.data
+    },
   })
 
   const delMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/suppliers/${id}`),
-    onSuccess: () => { toast.success('Fournisseur supprimé'); qc.invalidateQueries({ queryKey: ['suppliers'] }) },
+    onSuccess: () => {
+      toast.success('Fournisseur supprimé')
+      qc.invalidateQueries({ queryKey: ['suppliers'] })
+    },
+    onError: () => toast.error('Impossible de supprimer'),
   })
 
-  const items = data?.data || []; const meta = data?.meta || {}
+  const items = data?.data || []
+  const meta = data?.meta || {}
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div><h2 className="text-lg font-semibold">Fournisseurs</h2><p className="text-xs text-muted-foreground">{meta.total || 0} fournisseurs</p></div>
+        <div>
+          <h2 className="text-lg font-semibold">Fournisseurs</h2>
+          <p className="text-xs text-muted-foreground">{meta.total || 0} fournisseurs</p>
+        </div>
         <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Nouveau fournisseur</Button>
       </div>
+
       <Card>
         <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} placeholder="Nom, code..."
-              className="w-full h-8 pl-9 pr-3 rounded-lg bg-secondary border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/60" />
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+              placeholder="Nom, code..."
+              className="w-full h-8 pl-9 pr-3 rounded-lg bg-secondary border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/60"
+            />
           </div>
         </div>
-        {isLoading ? <div className="h-48 flex items-center justify-center"><Spinner /></div>
-          : items.length === 0 ? <EmptyState icon={<Truck className="h-6 w-6" />} title="Aucun fournisseur"
-            action={<Button size="sm" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Ajouter</Button>} />
-          : (<>
+
+        {isLoading ? (
+          <div className="h-48 flex items-center justify-center"><Spinner /></div>
+        ) : items.length === 0 ? (
+          <EmptyState
+            icon={<Truck className="h-6 w-6" />}
+            title="Aucun fournisseur"
+            action={<Button size="sm" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Ajouter</Button>}
+          />
+        ) : (
+          <>
             <Table>
-              <TableHeader><TableRow><TableHead>Fournisseur</TableHead><TableHead>Contact</TableHead><TableHead>Ville</TableHead><TableHead>Statut</TableHead><TableHead></TableHead></TableRow></TableHeader>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fournisseur</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Ville</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {items.map((s: any) => (
                   <TableRow key={s.id}>
@@ -105,9 +148,13 @@ export default function Suppliers() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => { setEditing(s); setShowForm(true) }}><Edit className="h-4 w-4" /> Modifier</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { setEditing(s); setShowForm(true) }}>
+                            <Edit className="h-4 w-4" /> Modifier
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem destructive onClick={() => delMutation.mutate(s.id)}><Trash2 className="h-4 w-4" /> Supprimer</DropdownMenuItem>
+                          <DropdownMenuItem destructive onClick={() => delMutation.mutate(s.id)}>
+                            <Trash2 className="h-4 w-4" /> Supprimer
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -115,10 +162,14 @@ export default function Suppliers() {
                 ))}
               </TableBody>
             </Table>
-            <Pagination page={page} totalPages={meta.pages || 1} total={meta.total || 0} limit={15} onPageChange={setPage} />
-          </>)}
+
+            <Pagination page={page} totalPages={meta.pages || 1} total={meta.total || 0} limit={10} onPageChange={setPage} />
+          </>
+        )}
       </Card>
+
       {showForm && <SupplierForm editing={editing} onClose={() => { setEditing(null); setShowForm(false) }} />}
     </div>
   )
 }
+

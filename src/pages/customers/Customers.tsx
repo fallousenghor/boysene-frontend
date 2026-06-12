@@ -18,14 +18,18 @@ function CustomerForm({ editing, onClose }: { editing?: any; onClose: () => void
     mutationFn: (d: any) => editing ? api.patch(`/customers/${editing.id}`, d) : api.post('/customers', d),
     onSuccess: () => {
       toast.success(editing ? 'Client modifié' : 'Client créé')
-      qc.invalidateQueries({ queryKey: ['customers'] }); onClose()
+      qc.invalidateQueries({ queryKey: ['customers'] })
+      onClose()
     },
     onError: (e: any) => toast.error(e?.response?.data?.message || 'Erreur'),
   })
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{editing ? 'Modifier client' : 'Nouveau client'}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{editing ? 'Modifier client' : 'Nouveau client'}</DialogTitle>
+        </DialogHeader>
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
           <div className="p-6 grid grid-cols-2 gap-4">
             <div className="col-span-2">
@@ -60,20 +64,27 @@ export default function Customers() {
   const { data, isLoading } = useQuery({
     queryKey: ['customers', page, search],
     queryFn: async () => {
-      const r = await api.get('/customers', { params: { page, limit: 15, search: search || undefined } })
+      const r = await api.get('/customers', { params: { page, limit: 10, search: search || undefined } })
       return r.data
     },
   })
 
   const delMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/customers/${id}`),
-    onSuccess: () => { toast.success('Client supprimé'); qc.invalidateQueries({ queryKey: ['customers'] }) },
+    onSuccess: () => {
+      toast.success('Client supprimé')
+      qc.invalidateQueries({ queryKey: ['customers'] })
+    },
     onError: () => toast.error('Impossible de supprimer'),
   })
 
   const sendReminder = async (id: string) => {
-    try { await api.post(`/whatsapp/reminder/${id}`); toast.success('Relance envoyée via WhatsApp') }
-    catch { toast.error('Erreur envoi WhatsApp') }
+    try {
+      await api.post(`/whatsapp/reminder/${id}`)
+      toast.success('Relance envoyée via WhatsApp')
+    } catch {
+      toast.error('Erreur envoi WhatsApp')
+    }
   }
 
   const items = data?.data || []
@@ -93,18 +104,24 @@ export default function Customers() {
         <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               placeholder="Nom, téléphone, code..."
-              className="w-full h-8 pl-9 pr-3 rounded-lg bg-secondary border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/60" />
+              className="w-full h-8 pl-9 pr-3 rounded-lg bg-secondary border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/60"
+            />
           </div>
         </div>
 
         {isLoading ? (
           <div className="h-48 flex items-center justify-center"><Spinner className="h-6 w-6" /></div>
         ) : items.length === 0 ? (
-          <EmptyState icon={<Users className="h-6 w-6" />} title="Aucun client"
+          <EmptyState
+            icon={<Users className="h-6 w-6" />}
+            title="Aucun client"
             description="Commencez par ajouter vos premiers clients."
-            action={<Button size="sm" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Ajouter</Button>} />
+            action={<Button size="sm" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Ajouter</Button>}
+          />
         ) : (
           <>
             <Table>
@@ -124,7 +141,7 @@ export default function Customers() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="text-xs font-bold text-primary">{c.name[0]}</span>
+                          <span className="text-xs font-bold text-primary">{c.name?.[0]}</span>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground">{c.name}</p>
@@ -180,7 +197,8 @@ export default function Customers() {
                 ))}
               </TableBody>
             </Table>
-            <Pagination page={page} totalPages={meta.pages || 1} total={meta.total || 0} limit={15} onPageChange={setPage} />
+
+            <Pagination page={page} totalPages={meta.pages || 1} total={meta.total || 0} limit={10} onPageChange={setPage} />
           </>
         )}
       </Card>
@@ -189,3 +207,4 @@ export default function Customers() {
     </div>
   )
 }
+

@@ -16,7 +16,10 @@ export default function Invoices() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = useQuery({
     queryKey: ['invoices', page],
-    queryFn: async () => { const r = await api.get('/invoices', { params: { page, limit: 15 } }); return r.data },
+    queryFn: async () => {
+      const r = await api.get('/invoices', { params: { page, limit: 10 } })
+      return r.data
+    },
   })
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -44,8 +47,11 @@ export default function Invoices() {
   const closeDialog = () => {
     setDialogOpen(false)
     if (pdfUrl) {
-      // revoke after a short delay to allow iframe to release handle
-      setTimeout(() => { try { URL.revokeObjectURL(pdfUrl) } catch {} }, 500)
+      setTimeout(() => {
+        try {
+          URL.revokeObjectURL(pdfUrl)
+        } catch {}
+      }, 500)
       setPdfUrl(null)
     }
   }
@@ -66,13 +72,12 @@ export default function Invoices() {
         iframeRef.current.contentWindow.focus()
         iframeRef.current.contentWindow.print()
       } else if (pdfUrl) {
-        // fallback: open in new tab and print
         const w = window.open(pdfUrl)
         if (w) w.print()
       }
     } catch (e) {
       console.error(e)
-      toast.error('Impossible d\'imprimer le document')
+      toast.error("Impossible d'imprimer le document")
     }
   }
 
@@ -81,13 +86,30 @@ export default function Invoices() {
 
   return (
     <div className="space-y-5">
-      <div><h2 className="text-lg font-semibold">Factures</h2><p className="text-xs text-muted-foreground">{meta.total || 0} documents</p></div>
+      <div>
+        <h2 className="text-lg font-semibold">Factures</h2>
+        <p className="text-xs text-muted-foreground">{meta.total || 0} documents</p>
+      </div>
+
       <Card>
-        {isLoading ? <div className="h-48 flex items-center justify-center"><Spinner /></div>
-          : items.length === 0 ? <EmptyState icon={<FileText className="h-6 w-6" />} title="Aucune facture" description="Les factures sont générées automatiquement." />
-          : (<>
+        {isLoading ? (
+          <div className="h-48 flex items-center justify-center"><Spinner /></div>
+        ) : items.length === 0 ? (
+          <EmptyState icon={<FileText className="h-6 w-6" />} title="Aucune facture" description="Les factures sont générées automatiquement." />
+        ) : (
+          <>
             <Table>
-              <TableHeader><TableRow><TableHead>N° Facture</TableHead><TableHead>Type</TableHead><TableHead>Client/Fournisseur</TableHead><TableHead>Date</TableHead><TableHead>Total</TableHead><TableHead>Statut</TableHead><TableHead></TableHead></TableRow></TableHeader>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>N° Facture</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Client/Fournisseur</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {items.map((inv: any) => {
                   const sc = statusConfig[inv.status] || {}
@@ -109,10 +131,12 @@ export default function Invoices() {
                 })}
               </TableBody>
             </Table>
-            <Pagination page={page} totalPages={meta.pages || 1} total={meta.total || 0} limit={15} onPageChange={setPage} />
-          </>)}
+            <Pagination page={page} totalPages={meta.pages || 1} total={meta.total || 0} limit={10} onPageChange={setPage} />
+          </>
+        )}
       </Card>
-      <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) closeDialog(); }}>
+
+      <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) closeDialog() }}>
         <DialogContent size="xl">
           <DialogHeader><DialogTitle>Facture</DialogTitle></DialogHeader>
           <div className="p-4" style={{ height: '70vh' }}>
@@ -120,7 +144,9 @@ export default function Invoices() {
               <div className="h-full flex items-center justify-center"><Spinner /></div>
             ) : pdfUrl ? (
               <iframe ref={iframeRef} title="Facture" src={pdfUrl} style={{ width: '100%', height: '100%', border: 'none' }} />
-            ) : <div className="h-full flex items-center justify-center">Chargement…</div>}
+            ) : (
+              <div className="h-full flex items-center justify-center">Chargement…</div>
+            )}
           </div>
           <DialogFooter>
             <div className="flex gap-2">
@@ -138,3 +164,4 @@ export default function Invoices() {
     </div>
   )
 }
+
